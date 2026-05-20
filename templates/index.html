@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연합뉴스 오디오 리더기</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* 배경 애니메이션 효과 */
+        .glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            top: -200px;
+            left: -200px;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .glow:nth-child(2) {
+            top: auto;
+            bottom: -200px;
+            left: auto;
+            right: -200px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        /* Glassmorphism Player Card */
+        .player-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button.play-btn {
+            background: var(--primary);
+            border: none;
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+
+        button.play-btn:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.6);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Article Display */
+        .article-display {
+            text-align: center;
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: #10b981;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status.loading {
+            color: #f59e0b;
+        }
+        
+        .status.stopped {
+            color: var(--text-muted);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: currentColor;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(currentColor, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(currentColor, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(currentColor, 0); }
+        }
+
+        .article-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 0 0 20px 0;
+            min-height: 70px;
+        }
+
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+            text-align: left;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.5);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) rgba(0,0,0,0.2);
+        }
+        
+        /* Custom Scrollbar */
+        .article-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .article-content::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .article-content::-webkit-scrollbar-thumb {
+            background-color: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Playlist / Next Up */
+        .playlist {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .playlist h3 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin: 0 0 15px 0;
+            font-weight: 600;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        
+        .list-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            color: var(--text-main);
+        }
+
+        .list-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .list-index {
+            width: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            opacity: 0.8;
+        }
+
+        .list-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+    <div class="glow"></div>
+
+    <div class="container">
+        <header>
+            <h1>Yonhap News Audio</h1>
+            <p class="subtitle">최신 기사를 끊김없이, 눈과 귀로 즐기세요.</p>
+        </header>
+
+        <div class="player-card">
+            <div class="article-display">
+                <div class="status stopped" id="status-indicator">
+                    <div class="dot"></div>
+                    <span id="status-text">준비 완료</span>
+                </div>
+                
+                <h2 class="article-title" id="current-title">재생 버튼을 눌러 뉴스 크롤링을 시작하세요</h2>
+                
+                <div class="controls">
+                    <button id="prev-btn" title="이전 기사" disabled>⏮</button>
+                    <button class="play-btn" id="play-btn" title="재생/일시정지">▶</button>
+                    <button id="next-btn" title="다음 기사" disabled>⏭</button>
+                </div>
+                
+                <div class="article-content" id="current-content">
+                    새로운 소식을 불러오기 위해 대기 중입니다...
+                </div>
+            </div>
+
+            <div class="playlist">
+                <h3>대기열 (최신 10건)</h3>
+                <div id="playlist-container">
+                    <div class="list-item">
+                        <div class="list-index">-</div>
+                        <div class="list-title">아직 불러온 기사가 없습니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소
+        const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const titleEl = document.getElementById('current-title');
+        const contentEl = document.getElementById('current-content');
+        const statusInd = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const playlistCont = document.getElementById('playlist-container');
+
+        // 상태 변수
+        let articles = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let isFetching = false;
+        let synth = window.speechSynthesis;
+        let currentUtterance = null;
+        let voices = [];
+
+        // 음성 로드 (Chrome에서 비동기 로드 대응)
+        function loadVoices() {
+            voices = synth.getVoices();
+        }
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // 뉴스 데이터 가져오기
+        async function fetchNews() {
+            if (isFetching) return;
+            
+            isFetching = true;
+            updateStatus('loading', '뉴스를 가져오는 중...');
+            playBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/news');
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.articles.length > 0) {
+                    articles = data.articles;
+                    currentIndex = 0;
+                    renderPlaylist();
+                    loadArticle(currentIndex);
+                    updateStatus('stopped', '준비 완료');
+                    playBtn.disabled = false;
+                    
+                    // 가져온 즉시 재생 시작
+                    togglePlay();
+                } else {
+                    updateStatus('stopped', '뉴스를 불러오지 못했습니다.');
+                    playBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                updateStatus('stopped', '서버 통신 오류');
+                playBtn.disabled = false;
+            } finally {
+                isFetching = false;
+            }
+        }
+
+        // 특정 기사 로드 및 화면 갱신
+        function loadArticle(index) {
+            if (index < 0 || index >= articles.length) return;
+            
+            const article = articles[index];
+            titleEl.textContent = article.title;
+            contentEl.textContent = article.content;
+            
+            // 플레이리스트 하이라이트 갱신
+            const items = playlistCont.querySelectorAll('.list-item');
+            items.forEach((item, i) => {
+                if (i === index) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+            
+            // 버튼 상태 갱신
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === articles.length - 1;
+        }
+
+        // 플레이리스트 렌더링
+        function renderPlaylist() {
+            playlistCont.innerHTML = '';
+            articles.forEach((article, i) => {
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                item.innerHTML = `
+                    <div class="list-index">${i + 1}</div>
+                    <div class="list-title">${article.title}</div>
+                `;
+                playlistCont.appendChild(item);
+            });
+        }
+
+        // TTS로 텍스트 읽기
+        function speakText(text, isTitle = false) {
+            return new Promise((resolve) => {
+                synth.cancel(); // 기존 음성 취소
+                
+                if (!text) {
+                    resolve();
+                    return;
+                }
+
+                currentUtterance = new SpeechSynthesisUtterance(text);
+                
+                // 한국어 음성 찾기
+                const koVoice = voices.find(v => v.lang.includes('ko'));
+                if (koVoice) {
+                    currentUtterance.voice = koVoice;
+                }
+                
+                currentUtterance.rate = 0.95; // 살짝 느리게 (뉴스톤)
+                currentUtterance.pitch = 1.0;
+
+                currentUtterance.onend = () => {
+                    resolve();
+                };
+
+                currentUtterance.onerror = (e) => {
+                    console.error("Speech error", e);
+                    resolve();
+                };
+
+                synth.speak(currentUtterance);
+            });
+        }
+
+        // 기사 재생 프로세스 (제목 -> 본문)
+        async function playCurrentArticle() {
+            if (!isPlaying || currentIndex >= articles.length) return;
+            
+            const article = articles[currentIndex];
+            updateStatus('playing', '재생 중');
+            playBtn.textContent = '⏸';
+            
+            // 1. 제목 읽기
+            await speakText("다음 기사입니다. " + article.title, true);
+            if (!isPlaying) return; // 중간에 정지 시
+            
+            // 약간 대기 (실제론 setTimeout을 쓰거나 빈 utterance 이용가능하지만 구조상 단순화)
+            
+            // 2. 본문 읽기
+            await speakText(article.content);
+            if (!isPlaying) return;
+            
+            // 3. 다음 기사로 넘어가기
+            if (currentIndex < articles.length - 1) {
+                currentIndex++;
+                loadArticle(currentIndex);
+                playCurrentArticle();
+            } else {
+                // 다 읽으면 정지상태로
+                stopPlaying();
+                updateStatus('stopped', '모든 기사를 다 읽었습니다.');
+                titleEl.textContent = "다시 재생하려면 재생 버튼을 누르세요.";
+                contentEl.textContent = "";
+            }
+        }
+
+        // 재생/일시정지 토글
+        function togglePlay() {
+            if (articles.length === 0) {
+                fetchNews();
+                return;
+            }
+
+            if (isPlaying) {
+                // 일시정지 (실제로는 정지)
+                synth.pause();
+                isPlaying = false;
+                playBtn.textContent = '▶';
+                updateStatus('stopped', '일시 정지됨');
+            } else {
+                // 재생
+                if (synth.paused) {
+                    synth.resume();
+                    isPlaying = true;
+                    playBtn.textContent = '⏸';
+                    updateStatus('playing', '재생 중');
+                } else {
+                    isPlaying = true;
+                    playCurrentArticle();
+                }
+            }
+        }
+
+        function stopPlaying() {
+            synth.cancel();
+            isPlaying = false;
+            playBtn.textContent = '▶';
+        }
+
+        // 이전 기사
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                stopPlaying();
+                currentIndex--;
+                loadArticle(currentIndex);
+                if (isPlaying) playCurrentArticle(); // 재생중이었다면 바로재생
+            }
+        });
+
+        // 다음 기사
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < articles.length - 1) {
+                stopPlaying();
+                currentIndex++;
+                loadArticle(currentIndex);
+                if (isPlaying) playCurrentArticle();
+            }
+        });
+
+        // 재생 버튼
+        playBtn.addEventListener('click', togglePlay);
+
+        // 상태 UI 업데이트
+        function updateStatus(state, text) {
+            statusInd.className = 'status ' + state;
+            
+            if (state === 'playing') {
+                statusInd.style.color = '#10b981';
+            } else if (state === 'loading') {
+                statusInd.style.color = '#f59e0b';
+            } else {
+                statusInd.style.color = 'var(--text-muted)';
+            }
+            
+            statusText.textContent = text;
+        }
+
+        // 초기화
+        loadVoices();
+    </script>
+</body>
+</html>
