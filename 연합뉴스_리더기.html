@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>연합뉴스 오디오 리더기 (순수 HTML 버전)</title>
+    <title>연합뉴스 오디오 리더기 (섹션별 재생)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -59,7 +59,7 @@
 
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -76,6 +76,43 @@
             color: var(--text-muted);
             font-size: 1.1rem;
             margin: 0;
+        }
+
+        /* 탭 버튼 UI */
+        .section-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            width: auto;
+            height: auto;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-hover);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
         }
 
         .player-card {
@@ -102,7 +139,7 @@
             margin-bottom: 30px;
         }
 
-        button {
+        .control-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--glass-border);
             color: var(--text-main);
@@ -117,17 +154,17 @@
             transition: all 0.2s ease;
         }
 
-        button:hover:not(:disabled) {
+        .control-btn:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.1);
             transform: scale(1.05);
         }
 
-        button:active:not(:disabled) {
+        .control-btn:active:not(:disabled) {
             transform: scale(0.95);
         }
 
-        button.play-btn {
-            background: var(--primary);
+        .play-btn {
+            background: var(--primary) !important;
             border: none;
             width: 80px;
             height: 80px;
@@ -135,12 +172,12 @@
             box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
         }
 
-        button.play-btn:hover:not(:disabled) {
-            background: var(--primary-hover);
+        .play-btn:hover:not(:disabled) {
+            background: var(--primary-hover) !important;
             box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.6);
         }
         
-        button:disabled {
+        .control-btn:disabled, .play-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
@@ -269,35 +306,45 @@
     <div class="container">
         <header>
             <h1>Yonhap News Audio</h1>
-            <p class="subtitle">순수 HTML 웹 프로그램 (더블클릭하여 바로 실행)</p>
+            <p class="subtitle">섹션을 선택하고 핵심 뉴스 5개를 감상하세요</p>
         </header>
+
+        <!-- 분야별 섹션 탭 -->
+        <div class="section-tabs" id="section-tabs">
+            <button class="tab-btn active" data-url="https://www.yna.co.kr/rss/news.xml">전체속보</button>
+            <button class="tab-btn" data-url="https://www.yna.co.kr/rss/politics.xml">정치</button>
+            <button class="tab-btn" data-url="https://www.yna.co.kr/rss/economy.xml">경제</button>
+            <button class="tab-btn" data-url="https://www.yna.co.kr/rss/society.xml">사회</button>
+            <button class="tab-btn" data-url="https://www.yna.co.kr/rss/international.xml">국제</button>
+            <button class="tab-btn" data-url="https://www.yna.co.kr/rss/culture.xml">문화</button>
+        </div>
 
         <div class="player-card">
             <div class="article-display">
                 <div class="status stopped" id="status-indicator">
                     <div class="dot"></div>
-                    <span id="status-text">준비 완료</span>
+                    <span id="status-text">섹션을 선택하거나 재생 버튼을 누르세요</span>
                 </div>
                 
-                <h2 class="article-title" id="current-title">재생 버튼을 눌러 뉴스 크롤링을 시작하세요</h2>
+                <h2 class="article-title" id="current-title">대기 중입니다</h2>
                 
                 <div class="controls">
-                    <button id="prev-btn" title="이전 기사" disabled>⏮</button>
-                    <button class="play-btn" id="play-btn" title="재생/일시정지">▶</button>
-                    <button id="next-btn" title="다음 기사" disabled>⏭</button>
+                    <button class="control-btn" id="prev-btn" title="이전 기사" disabled>⏮</button>
+                    <button class="control-btn play-btn" id="play-btn" title="재생/일시정지">▶</button>
+                    <button class="control-btn" id="next-btn" title="다음 기사" disabled>⏭</button>
                 </div>
                 
                 <div class="article-content" id="current-content">
-                    서버나 BAT 파일 없이, 브라우저가 직접 기사를 가져옵니다.
+                    선택한 분야의 주요 뉴스 5건을 크롤링하여 재생합니다.
                 </div>
             </div>
 
             <div class="playlist">
-                <h3>대기열 (최신 10건)</h3>
+                <h3>현재 대기열 (대표 5건)</h3>
                 <div id="playlist-container">
                     <div class="list-item">
                         <div class="list-index">-</div>
-                        <div class="list-title">아직 불러온 기사가 없습니다.</div>
+                        <div class="list-title">불러온 기사가 없습니다.</div>
                     </div>
                 </div>
             </div>
@@ -305,7 +352,8 @@
     </div>
 
     <script>
-        const RSS_URL = 'https://www.yna.co.kr/rss/news.xml';
+        // 현재 선택된 섹션의 RSS 피드 URL (초기값: 전체속보)
+        let currentRssUrl = 'https://www.yna.co.kr/rss/news.xml';
         
         // CORS 우회를 위한 프록시 서버 사용 (순수 프론트엔드 크롤링용)
         const PROXY_URL = 'https://api.codetabs.com/v1/proxy?quest=';
@@ -318,6 +366,7 @@
         const statusInd = document.getElementById('status-indicator');
         const statusText = document.getElementById('status-text');
         const playlistCont = document.getElementById('playlist-container');
+        const tabBtns = document.querySelectorAll('.tab-btn');
 
         let articles = [];
         let currentIndex = 0;
@@ -348,7 +397,7 @@
         function cleanText(text) {
             if (!text) return "";
             
-            // 1. (서울=연합뉴스) OOO 기자 = 형식 제거
+            // 1. (서울=연합뉴스) OOO 기자  형식 제거
             text = text.replace(/^\([^)]+\)\s*.*?기자\s*=\s*/g, '');
             text = text.replace(/\[연합뉴스[^\]]*\]/g, '');
             
@@ -358,6 +407,7 @@
             // 3. 광고성/안내 문구 제거
             const removes = [
                 '제보는 카카오톡 okjebo',
+                '<저작권자(c) 연합뉴스, 무단 전재-재배포, AI 학습 및 활용 금지>',
                 '무단 전재 및 재배포 금지',
                 '무단 전재-재배포 금지'
             ];
@@ -365,25 +415,19 @@
                 text = text.replace(new RegExp(r, 'g'), '');
             });
             
-            // 4. 저작권자 및 끝부분 송고 시간 등 모두 제거
-            text = text.replace(/<저작권자\(c\)[^>]*>[\s\S]*/g, '');
-            text = text.replace(/\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+송고.*/g, '');
-            
             // 끝부분 OOO 기자 패턴 제거
             text = text.replace(/[가-힣]{2,4}\s*기자$/g, '');
+            
+            // 본문에 남아있는 '=' 기호 제거 ('등호'라고 읽는 것 방지)
+            text = text.replace(/=/g, ' ');
             
             return text.replace(/\s+/g, ' ').trim();
         }
 
-        async function fetchHtmlWithProxy(url) {
-            const response = await fetch(PROXY_URL + encodeURIComponent(url));
-            const text = await response.text();
-            return text;
-        }
-
         async function scrapeArticle(url) {
             try {
-                const html = await fetchHtmlWithProxy(url);
+                const response = await fetch(PROXY_URL + encodeURIComponent(url));
+                const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 
@@ -414,15 +458,16 @@
             playBtn.disabled = true;
             
             try {
-                // RSS 피드는 rss2json을 사용하여 파싱 (codetabs가 XML 프록시에 실패하는 문제 우회)
-                const rssResponse = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(RSS_URL));
+                // RSS 피드는 rss2json을 사용하여 파싱
+                const rssResponse = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentRssUrl));
                 const rssData = await rssResponse.json();
                 
                 if (rssData.status !== 'ok') {
                     throw new Error('RSS 파싱 실패');
                 }
                 
-                const items = rssData.items.slice(0, 10);
+                // 기사 5개로 제한!
+                const items = rssData.items.slice(0, 5);
                 articles = [];
                 
                 for (let i = 0; i < items.length; i++) {
@@ -442,10 +487,10 @@
                     currentIndex = 0;
                     renderPlaylist();
                     loadArticle(currentIndex);
-                    updateStatus('stopped', '모든 기사 로드 완료!');
+                    updateStatus('stopped', '준비 완료!');
                     playBtn.disabled = false;
                     
-                    // 곧바로 재생
+                    // 새 섹션을 로드한 후 곧바로 자동 재생 시작
                     togglePlay();
                 } else {
                     updateStatus('error', '기사를 불러오지 못했습니다.');
@@ -453,7 +498,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching news:', error);
-                updateStatus('error', '네트워크/CORS 프록시 에러');
+                updateStatus('error', '네트워크 통신 에러');
                 playBtn.disabled = false;
             } finally {
                 isFetching = false;
@@ -507,12 +552,40 @@
 
                 currentUtterance = new SpeechSynthesisUtterance(text);
                 
-                let koVoice = voices.find(v => v.lang.includes('ko') && v.name.includes('Google'));
-                if (!koVoice) koVoice = voices.find(v => v.lang.includes('ko'));
-                if (koVoice) currentUtterance.voice = koVoice;
+                // 한국어 음성 목록 가져오기
+                let koVoices = voices.filter(v => v.lang.includes('ko'));
+                let selectedVoice = null;
                 
-                currentUtterance.rate = 1.0; 
-                currentUtterance.pitch = 1.0;
+                // 1. 남성 목소리 우선 (윈도우 Edge의 InJoon 등)
+                selectedVoice = koVoices.find(v => v.name.toLowerCase().includes('injoon') || v.name.toLowerCase().includes('male'));
+                
+                // 2. 남성이 없다면 자연스러운(Natural/Online) 목소리 차선
+                if (!selectedVoice) {
+                    selectedVoice = koVoices.find(v => v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('online'));
+                }
+                
+                // 3. 구글 기본 음성 (대부분 여성)
+                if (!selectedVoice) {
+                    selectedVoice = koVoices.find(v => v.name.toLowerCase().includes('google'));
+                }
+                
+                // 4. 아무거나 사용
+                if (!selectedVoice && koVoices.length > 0) {
+                    selectedVoice = koVoices[0];
+                }
+                
+                if (selectedVoice) {
+                    currentUtterance.voice = selectedVoice;
+                }
+                
+                // 남성 목소리를 찾지 못했고 여성 목소리만 있는 경우 pitch를 살짝 낮춰서 덜 하이톤으로 만듦
+                if (selectedVoice && !selectedVoice.name.toLowerCase().includes('injoon') && !selectedVoice.name.toLowerCase().includes('male')) {
+                    currentUtterance.pitch = 0.8;
+                } else {
+                    currentUtterance.pitch = 1.0;
+                }
+                
+                currentUtterance.rate = 0.95; // 뉴스를 자연스럽게 읽도록 속도 살짝 조절
 
                 currentUtterance.onend = () => resolve();
                 currentUtterance.onerror = (e) => {
@@ -567,14 +640,15 @@
                 playCurrentArticle();
             } else {
                 stopPlaying();
-                updateStatus('stopped', '모든 기사를 다 읽었습니다.');
-                titleEl.textContent = "다시 재생하려면 재생 버튼을 누르세요.";
+                updateStatus('stopped', '섹션 내 모든 기사를 읽었습니다.');
+                titleEl.textContent = "다른 분야 버튼을 누르거나 다시 재생하세요.";
                 contentEl.textContent = "";
             }
         }
 
         function togglePlay() {
-            if (articles.length === 0) {
+            // 새 섹션을 처음 시작할 때
+            if (articles.length === 0 && !isFetching) {
                 fetchNews();
                 return;
             }
@@ -602,6 +676,30 @@
             isPlaying = false;
             playBtn.textContent = '▶';
         }
+
+        // 섹션 탭 클릭 이벤트
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 클릭한 버튼의 url 가져오기
+                const newUrl = e.target.getAttribute('data-url');
+                if (currentRssUrl === newUrl) return; // 같은 탭이면 무시
+                
+                // 기존 재생 중지 및 초기화
+                stopPlaying();
+                articles = [];
+                playlistCont.innerHTML = '<div class="list-item"><div class="list-index">-</div><div class="list-title">새로운 섹션을 불러오는 중입니다...</div></div>';
+                titleEl.textContent = "대기 중입니다";
+                contentEl.textContent = "";
+                
+                // 탭 UI 활성화 갱신
+                tabBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // 새 URL로 갱신 후 뉴스 가져오기
+                currentRssUrl = newUrl;
+                fetchNews();
+            });
+        });
 
         prevBtn.addEventListener('click', () => {
             if (currentIndex > 0) {

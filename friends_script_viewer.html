@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends Script Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+            --accent-blue: #3b82f6;
+            --button-bg: #334155;
+            --button-hover: #475569;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(239, 68, 68, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(234, 179, 8, 0.05), transparent 25%),
+                radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.05), transparent 25%);
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--container-bg);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 900px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .header {
+            padding: 24px 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot-red { background-color: var(--accent-red); }
+        .dot-yellow { background-color: var(--accent-yellow); }
+        .dot-blue { background-color: var(--accent-blue); }
+
+        .episode-info {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .script-content {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        .script-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .script-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .script-content::-webkit-scrollbar-thumb {
+            background: var(--button-bg);
+            border-radius: 4px;
+        }
+
+        .line {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .speaker {
+            font-weight: 600;
+            color: var(--accent-yellow);
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .speaker.narrator {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .text {
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .note {
+            color: var(--text-muted);
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+
+        .controls {
+            padding: 24px 32px;
+            background: rgba(30, 41, 59, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            background: var(--button-bg);
+            color: var(--text-main);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-indicator {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <h1 class="title">
+                F<div class="dots"><div class="dot dot-red"></div></div>R<div class="dots"><div class="dot dot-yellow"></div></div>I<div class="dots"><div class="dot dot-blue"></div></div>E<div class="dots"><div class="dot dot-red"></div></div>N<div class="dots"><div class="dot dot-yellow"></div></div>D<div class="dots"><div class="dot dot-blue"></div></div>S
+                Script
+            </h1>
+            <div class="episode-info" id="episode-info">Loading...</div>
+        </div>
+
+        <div class="script-content" id="script-content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Fetching scripts...</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="prev-btn" disabled>
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Previous
+            </button>
+            <div class="page-indicator" id="page-indicator">Page 1</div>
+            <button id="next-btn" disabled>
+                Next
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Load the data script -->
+    <script src="friends_data.js"></script>
+    <script>
+        const LINES_PER_PAGE = 15;
+        let allUtterances = [];
+        let currentPage = 0;
+
+        const contentEl = document.getElementById('script-content');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const pageIndEl = document.getElementById('page-indicator');
+        const epInfoEl = document.getElementById('episode-info');
+
+        function init() {
+            try {
+                // Use the globally loaded friendsData from friends_data.js
+                if (typeof friendsData !== 'undefined') {
+                    processData(friendsData);
+                    renderPage();
+                } else {
+                    throw new Error("Data not found. Make sure friends_data.js is in the same folder.");
+                }
+            } catch (error) {
+                contentEl.innerHTML = `<div style="color: var(--accent-red); text-align: center;">Error loading data: ${error.message}</div>`;
+                console.error(error);
+            }
+        }
+
+        function processData(data) {
+            data.episodes.forEach(episode => {
+                const epId = episode.episode_id; // e.g. s01_e01
+                const formattedEp = epId.replace('s', 'Season ').replace('_e', ' Episode ');
+
+                episode.scenes.forEach(scene => {
+                    scene.utterances.forEach(utterance => {
+                        let speakers = utterance.speakers ? utterance.speakers.join(", ") : "";
+                        let text = utterance.transcript || utterance.transcript_with_note;
+                        
+                        // Clean up "#ALL#" or empty speakers
+                        if (speakers === "#ALL#") speakers = "All";
+                        if (!speakers) speakers = "Narrator/Action";
+
+                        if (text && text.trim() !== "") {
+                            allUtterances.push({
+                                episode: formattedEp,
+                                speaker: speakers,
+                                text: text
+                            });
+                        }
+                    });
+                });
+            });
+        }
+
+        function renderPage() {
+            contentEl.innerHTML = '';
+            
+            const startIndex = currentPage * LINES_PER_PAGE;
+            const endIndex = Math.min(startIndex + LINES_PER_PAGE, allUtterances.length);
+            const pageUtterances = allUtterances.slice(startIndex, endIndex);
+
+            if (pageUtterances.length === 0) return;
+
+            // Set Episode Info (using the first line of the current page)
+            epInfoEl.textContent = pageUtterances[0].episode;
+
+            pageUtterances.forEach((utt, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'line';
+                lineDiv.style.animationDelay = `${index * 0.03}s`;
+
+                const isNarrator = utt.speaker === "Narrator/Action";
+                
+                let speakerHtml = `<div class="speaker ${isNarrator ? 'narrator' : ''}">${utt.speaker}</div>`;
+                if (isNarrator) speakerHtml = ''; // Sometimes we just show the action in italic
+
+                let textClass = isNarrator ? 'note' : 'text';
+
+                lineDiv.innerHTML = `
+                    ${speakerHtml}
+                    <div class="${textClass}">${utt.text}</div>
+                `;
+
+                contentEl.appendChild(lineDiv);
+            });
+
+            // Update Controls
+            const totalPages = Math.ceil(allUtterances.length / LINES_PER_PAGE);
+            pageIndEl.textContent = `Page ${currentPage + 1} of ${totalPages}`;
+            
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = currentPage >= totalPages - 1;
+
+            // Scroll to top
+            contentEl.scrollTop = 0;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                renderPage();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(allUtterances.length / LINES_PER_PAGE);
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                renderPage();
+            }
+        });
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>
